@@ -14,11 +14,7 @@ class TaskController extends Controller
 {
     public function index(Request $request)
     {
-        $client = new Google_Client();
-        $client->useApplicationDefaultCredentials();
-        $client->addScope(Google_Service_Tasks::TASKS);
-        $httpClient = $client->authorize();
-        dd($httpClient);
+        $client = $this->client();
         $service = new \Google_Service_Tasks($client);
         $optParams = array(
             'maxResults' => 10,
@@ -73,6 +69,7 @@ class TaskController extends Controller
             }
             file_put_contents($tokenPath, json_encode($client->getAccessToken()));
         }
+        dd($client);
         return $client;
     }
 }
