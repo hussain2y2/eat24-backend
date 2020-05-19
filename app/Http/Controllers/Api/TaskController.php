@@ -42,6 +42,8 @@ class TaskController extends Controller
             $client->setAccessToken($accessToken);
         }
 
+        $authCode = '4/0AGHWcrh6LCvkM1VWWUtot0b2bUR1zLKzUMpI4XUhOx7Sgz3DINIl0g';
+
         // If there is no previous token or it's expired.
         if ($client->isAccessTokenExpired()) {
             // Refresh the token if possible, else fetch a new one.
@@ -50,9 +52,9 @@ class TaskController extends Controller
             } else {
                 // Request authorization from the user.
                 $authUrl = $client->createAuthUrl();
-                printf("Open the following link in your browser:\n%s\n", $authUrl);
-                print 'Enter verification code: ';
-                $authCode = trim(fgets(STDIN));
+//                printf("Open the following link in your browser:\n%s\n", $authUrl);
+//                print 'Enter verification code: ';
+//                $authCode = trim(fgets(STDIN));
 
                 // Exchange authorization code for an access token.
                 $accessToken = $client->fetchAccessTokenWithAuthCode($authCode);
