@@ -19,6 +19,7 @@ class GoogleClient
         $client->setApplicationName('EAT24');
         $client->setScopes(\Google_Service_Tasks::TASKS);
         $client->setAuthConfig('credentials.json');
+        $client->setRedirectUri('http://isotopessolution.com/api/tasks');
         $client->setAccessType('offline');
         $client->setPrompt('select_account consent');
 
@@ -39,11 +40,11 @@ class GoogleClient
                 $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
             } else {
                 // Request authorization from the user.
-                $authUrl = $client->createAuthUrl();
-                printf("Open the following link in your browser:\n%s\n", $authUrl);
-                print 'Enter verification code: ';
-
-                $authCode = trim(fgets(STDIN));
+//                $authUrl = $client->createAuthUrl();
+//                printf("Open the following link in your browser:\n%s\n", $authUrl);
+//                print 'Enter verification code: ';
+//                $authCode = trim(fgets(STDIN));
+                $authCode = request()->get('code');
                 // Exchange authorization code for an access token.
                 $accessToken = $client->fetchAccessTokenWithAuthCode($authCode);
                 $client->setAccessToken($accessToken);
