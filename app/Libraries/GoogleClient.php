@@ -44,10 +44,8 @@ class GoogleClient
                 print 'Enter verification code: ';
 
                 $authCode = trim(fgets(STDIN));
-                dd($client, $authCode);
                 // Exchange authorization code for an access token.
                 $accessToken = $client->fetchAccessTokenWithAuthCode($authCode);
-                dd($client, $accessToken);
                 $client->setAccessToken($accessToken);
                 // Check to see if there was an error.
                 if (array_key_exists('error', $accessToken)) {
@@ -60,7 +58,6 @@ class GoogleClient
             }
             file_put_contents($tokenPath, json_encode($client->getAccessToken()));
         }
-        dd($client);
         return $client;
     }
 }
