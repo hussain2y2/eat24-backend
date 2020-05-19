@@ -13,7 +13,7 @@ class GoogleClient
      * @return Google_Client
      * @throws \Google_Exception
      */
-    public static function getClient(): Google_Client
+    public static function getClient($code = null): Google_Client
     {
         $client = new Google_Client();
         $client->setApplicationName('EAT24');
@@ -44,7 +44,7 @@ class GoogleClient
 //                printf("Open the following link in your browser:\n%s\n", $authUrl);
 //                print 'Enter verification code: ';
 //                $authCode = trim(fgets(STDIN));
-                $authCode = request()->get('code');
+
                 // Exchange authorization code for an access token.
                 $accessToken = $client->fetchAccessTokenWithAuthCode($authCode);
                 $client->setAccessToken($accessToken);
