@@ -4,74 +4,88 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Libraries\GoogleClient;
-use Google_Service_Tasks;
 use Illuminate\Http\Request;
-use Google_Client;
-
-define('STDIN',fopen("php://stdin", 'r'));
+use Illuminate\Support\Facades\Storage;
 
 class TaskController extends Controller
 {
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse|null
+     */
     public function index(Request $request)
     {
-        $client = $this->client();
-        $service = new \Google_Service_Tasks($client);
-        $optParams = array(
-            'maxResults' => 10,
-        );
-        $results = $service->tasklists->listTasklists($optParams);
-        dd($results);
-    }
+        $client = GoogleClient::getClient();
 
-    public function client()
-    {
-        $client = new Google_Client();
-        $client->setApplicationName('Google Tasks API PHP Quickstart');
-        $client->setScopes(Google_Service_Tasks::TASKS);
-        $client->setAuthConfig(public_path('credentials.json'));
-        $client->setAccessType('offline');
-        $client->setPrompt('select_account consent');
-
-        // Load previously authorized token from a file, if it exists.
-        // The file token.json stores the user's access and refresh tokens, and is
-        // created automatically when the authorization flow completes for the first
-        // time.
         $tokenPath = 'token.json';
-        if (file_exists($tokenPath)) {
-            $accessToken = json_decode(file_get_contents($tokenPath), true);
+
+        if (file_exists(storage_path("app/$tokenPath"))) {
+            $accessToken = json_decode(file_get_contents(storage_path("app/$tokenPath")), true);
             $client->setAccessToken($accessToken);
         }
 
-        $authCode = '4/0AGHWcrh6LCvkM1VWWUtot0b2bUR1zLKzUMpI4XUhOx7Sgz3DINIl0g';
-
-        // If there is no previous token or it's expired.
         if ($client->isAccessTokenExpired()) {
-            // Refresh the token if possible, else fetch a new one.
             if ($client->getRefreshToken()) {
                 $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
             } else {
-                // Request authorization from the user.
-                $authUrl = $client->createAuthUrl();
-//                printf("Open the following link in your browser:\n%s\n", $authUrl);
-//                print 'Enter verification code: ';
-//                $authCode = trim(fgets(STDIN));
-
-                // Exchange authorization code for an access token.
-                $accessToken = $client->fetchAccessTokenWithAuthCode($authCode);
-                $client->setAccessToken($accessToken);
-
-                // Check to see if there was an error.
-                if (array_key_exists('error', $accessToken)) {
-                    throw new \Exception(join(', ', $accessToken));
+                if ($request->has('code')) {
+                    $accessToken = $client->fetchAccessTokenWithAuthCode($request->get('code'));
+                    $client->setAccessToken($accessToken);
+                } else {
+                    $authUrl = $client->createAuthUrl();
+                    return response()->json(['login_url' => $authUrl], 200);
                 }
             }
-            // Save the token to a file.
-            if (!file_exists(dirname($tokenPath))) {
-                mkdir(dirname($tokenPath), 0700, true);
+
+            if (!Storage::exists($tokenPath)) {
+                Storage::put($tokenPath, json_encode($client->getAccessToken()));
             }
-            file_put_contents($tokenPath, json_encode($client->getAccessToken()));
         }
-        dd($client);
-        return $client;
+
+        $service = new \Google_Service_Tasks($client);
+        $response = null;
+
+        switch ($request->get('state')) {
+            case 'LIST':
+                $results = $service->tasklists->listTasklists();
+
+                $response = response()->json([
+                    'taskList' => $results->getItems(),
+                ], 200);
+                break;
+            case 'TASKS':
+                $taskList = $request->get('taskList');
+                $tasks = $service->tasks->listTasks($taskList)->getItems();
+
+                $response = response()->json([
+                    'tasks' => $tasks
+                ], 200);
+                break;
+            case 'DELETE':
+                $taskList = $request->get('taskList');
+                $taskId = $request->get('task');
+                $service->tasks->delete($taskList, $taskId);
+                $tasks = $service->tasks->listTasks($taskList)->getItems();
+
+                $response = response()->json([
+                    'tasks' => $tasks
+                ], 200);
+                break;
+            case 'INSERT':
+                $taskList = $request->get('taskList');
+                $task = new \Google_Service_Tasks_Task();
+                $task->title = $request->get('title');
+                $task->notes = $request->get('notes');
+                $service->tasks->insert($taskList, $task);
+
+                $tasks = $service->tasks->listTasks($taskList)->getItems();
+
+                $response = response()->json([
+                    'tasks' => $tasks
+                ], 200);
+                break;
+        }
+
+        return $response;
     }
 }

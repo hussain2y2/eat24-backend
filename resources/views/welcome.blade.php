@@ -81,7 +81,7 @@
 
             <div class="content">
                 <div class="title m-b-md">
-                    Laravel
+                    <button type="submit" class="btn btn-primary" onclick="window.location = '{{ $login_url }}'">Google Authentication</button>
                 </div>
 
                 <div class="links">
